@@ -1,0 +1,5 @@
+*.pt
+*.usd
+__pycache__/
+.venv/
+.pytest_cache/
