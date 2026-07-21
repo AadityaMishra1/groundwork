@@ -2,7 +2,9 @@
 
 RL-trained five-finger floor grasping on a low-cost humanoid (Unitree G1 + Inspire hands), in simulation with fully honest physics. No teleoperation, no human demonstrations, no physics shortcuts. Single rented GPU, <$150 total compute.
 
-![First-ever RL floor pickups](media/04_first_floor_pickups_5pct.gif)
+![Strict-protocol floor pickup](media/06_strict_pickup.gif)
+
+One uncut episode at a user-chosen object placement: deep squat, five-finger grasp, lift to 0.40 m, 3-second verified hold — the strict protocol's full bar. Same policy, same physics as every number below ([media/06_strict_pickup.mp4](media/06_strict_pickup.mp4) for the multi-episode cut; harness: [pod/demo_pickup.py](pod/demo_pickup.py) — pick the object's position, size, and mass, get a scored episode and video).
 
 **Current headline result: 28.2% success under a strict pre-registered protocol** — random object spawn position and orientation, full gravity, deterministic policy, success only if the object is lifted to 0.40 m and held for 3 continuous seconds with PhysX-verified multi-finger contact (≥3 finger links + thumb opposition, hand-only). 400-episode evaluations, failure taxonomy published with every number. Protocol: [docs/EVAL_PROTOCOL.md](docs/EVAL_PROTOCOL.md). Scoring code: [pod/demo_grasp.py](pod/demo_grasp.py).
 
@@ -44,6 +46,10 @@ Earlier pipeline stages on the same embodiment — velocity-tracking locomotion,
 ![Walking](media/01_walking.gif)
 
 ![Walk, crouch, stand](media/02_walk_crouch_stand.gif)
+
+First-ever full-task floor pickups (5% era, randomized spawns):
+
+![First-ever RL floor pickups](media/04_first_floor_pickups_5pct.gif)
 
 Grasp policy mid-progression (pre-redesign, ~7%): approach and contact are learned; holds still fail — this is the plateau the action-space analysis explains:
 
