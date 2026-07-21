@@ -21,6 +21,18 @@ Trained weights and the training stack (environments, rewards, curricula, RL con
 | Tactile observations (per-finger contact + fingertip states) | ~9% | touch→grip conversion 54%→64% |
 | **Action-space restructuring** | **28.2%** | **lift→hold conversion 17%→97%** |
 
+## Where this sits in the field
+
+Dexterous RL grasping results have historically ridden on three crutches this project deliberately goes without:
+
+**1. Expensive, kinematically supported hands.** The classic results train arm-mounted hands at table height — the [Shadow Hand (~$100k)](https://www.technowize.com/openai-robot-hand-learns-dexterity-in-handling-objects/) and the [Allegro (~$15k, the research standard)](https://www.roboticscenter.ai/blog/best-robot-hands-dexterous-2025) — where a fixed industrial arm hands the policy a solved reach/support problem. Here the hand is an [Inspire (~$8k)](https://www.roboticscenter.ai/blog/best-robot-hands-dexterous-2025) on a ~$16k-class humanoid whose own short arms make floor-level objects barely reachable — the reach/balance problem is part of the task, not the fixture.
+
+**2. Human demonstrations.** Humanoids that pick objects off the ground today do it through whole-body **teleoperation** ([CLONE](https://arxiv.org/abs/2506.08931)) or **imitation of human motion data** ([HumanPlus](https://github.com/YanjieZe/awesome-humanoid-robot-learning), [ResMimic](https://github.com/YanjieZe/awesome-humanoid-robot-learning)) — a human supplies the strategy; the robot learns to reproduce it. This project uses **zero demonstrations**: the grasp strategy in the video above was discovered by RL from physics alone. (We tried the demo route; our scripted-replay generator produced 1-in-10,000 usable demos and was abandoned — the discovery-not-imitation constraint is load-bearing, not aesthetic.)
+
+**3. Industrial compute.** OpenAI's Dactyl used [a ~400-server CPU cluster plus 32 V100s](https://openai.com/index/learning-dexterity/); DexPBT brought Allegro grasping down to [8 datacenter GPUs](https://arxiv.org/pdf/2210.13702). Total compute for everything on this page: **one rented consumer GPU, under $150.**
+
+What the field does better, stated plainly: those systems show **real-robot** results at high success rates; everything here is simulation (with deliberately un-cheated physics — self-collision on, gravity on every link, PhysX-verified contacts — chosen to make eventual transfer credible: the Inspire hand's real fingertip force sensors mean our tactile observations correspond to hardware that exists). The claim is not "better numbers." The claim is that **five-finger floor-level grasping on a low-cost humanoid via demonstration-free RL at hobby compute** is a corner of the capability space nobody had staked, and 28.2% under a strict adversarial protocol is its first honest baseline.
+
 ## The finding that broke the plateau
 
 Four training rounds of reward engineering each improved their targeted failure mode while end-to-end success stayed pinned at 7–10%. Per-episode instrumentation (longest continuous verified hold, object velocity at grip loss) localized the invariant: median true-hold streak among "successful lifts" was **0 frames**, and median object speed at grip loss was **2.8 m/s** — the policy wasn't dropping objects, it was throwing them.
