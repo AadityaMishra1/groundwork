@@ -62,7 +62,7 @@ Earlier stages — round-1 walking on the stock handless G1, first full-task pic
 
 ## Notes
 
-- The shipped robot asset has self-collision off, gravity off on links, and a bolted base. Each inflates results silently. All current numbers: self-collision on, free base, full gravity. Freeing the base required moving the articulation root to the pelvis and stripping the finger mimic-joints from the USD.
+- The robot asset ships from the vendor with self-collision off, gravity disabled on the links, and the base bolted in space — defaults that silently inflate results for anyone who trains on it unmodified. We turned all three on/off correctly: every number on this page runs with self-collision on, full gravity on every link, and a free base. Freeing the base required moving the articulation root to the pelvis and stripping the finger mimic-joints from the USD.
 - Every eval bins episodes by deepest stage reached (never-near → touched → gripped → lifted → held). Interventions target the binding constraint.
 - Difficulty curricula act on physics with a fixed anneal schedule, never on the reward. Evaluation always runs at full difficulty.
 - Rigid-body simulation flatters grip stability: the 11-second holds will not transfer at that duration. The Inspire hand's physical fingertip force sensors are the planned bridge.
