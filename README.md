@@ -60,6 +60,21 @@ Earlier stages — round-1 walking on the stock handless G1, first full-task pic
 ![First floor pickups](media/04_first_floor_pickups_5pct.gif)
 ![Pre-redesign grasping](media/05_grasp_progress_7pct.gif)
 
+### The reset-boundary bug family
+
+One bug class claimed five instruments in this project, each producing confident, precise-looking numbers that were pure artifact. In a parallel-env simulator, episode resets happen *inside* `step()`: state buffers reflect the freshly-written reset pose immediately, while sensor buffers and done-semantics lag or conflate. Any read that spans that boundary measures a chimera:
+
+- An eval counted episode *truncation* as falls — with 10 s hold windows against a 20 s clock, every second test condition read 62/64 "fell" while tracking perfectly (an alternating comb across conditions is the fingerprint).
+- A rollout harness read robot state post-step — i.e. post-auto-reset — so a falling robot respawned before the check could see it. Its "fell: 0" was structurally incapable of being anything else.
+- A data harvester captured "grasp states" on reset steps: fresh spawn pose from the state buffers, *stale pre-reset contact flags* from the sensors. All 435 harvested grasps were spawn poses with no grasp — root height identical to 6 decimal places across the set, zero velocities. Identical values across a harvested dataset are the fingerprint of capturing the reset writer, not the behavior.
+- A validity filter (`uprightness > 0.7`, meant as "never bank a falling robot") silently rejected every *real* grasp — the trained policy's true hold posture leaned past 45° — while passing the perfectly-upright counterfeits. Print the quantiles of every filter conjunct before trusting an empty result.
+
+Rules that ended the class: guard every cross-buffer read with `(~dones) & (episode_length > ~10)`; detect falls from state (pelvis height, up-vector), never from dones; and **validate every harvested dataset with a zero-action restore probe** — spawn from the bank, command nothing, and the claimed property must be present at t=1 (`pod/g1_grasp/probe_cage.py` is the template).
+
+### Certify kinematics before training toward them
+
+A "workspace limit" measured by random action sampling pinned this project's hardest constraint for two weeks — until constrained whole-body optimization (35-DoF IK with foot-contact, support-polygon, and self-collision constraints, then a friction-cone contact-force QP against spec torque limits) showed the limit was an artifact of the probe: uniform sampling in 20 dimensions cannot find a workspace boundary, and the sampled stance family self-collided in exactly the volume the arm needed. The certified answer moved the required posture 20+ cm and deleted the constraint entirely. Tooling in `tools/wbik.py` and `tools/statics.py` (CPU, minutes, no GPU); both carry built-in known-answer controls that must pass before any real verdict is believed, after an inverse-dynamics variant produced a dramatic and entirely false verdict of its own.
+
 ## Notes
 
 - The robot asset ships from the vendor with self-collision off, gravity disabled on the links, and the base bolted in space — defaults that silently inflate results for anyone who trains on it unmodified. We turned all three on/off correctly: every number on this page runs with self-collision on, full gravity on every link, and a free base. Freeing the base required moving the articulation root to the pelvis and stripping the finger mimic-joints from the USD.
@@ -69,6 +84,6 @@ Earlier stages — round-1 walking on the stock handless G1, first full-task pic
 
 ## Status
 
-Done: strict floor grasp, 35.5% free-standing (one object geometry, easy end of protocol range). Commanded walking and kneeling (stand ↔ 0.32 m). In progress: making the kneel stable under a control handoff, for the composed chain. Next: object size/mass randomization, then one continuous episode — walk, kneel, grasp, lift, rise. Judged episodes contain no scripted motion.
+Done: strict floor grasp, 35.5% free-standing (one object geometry, easy end of protocol range) — **now carrying an asterisk**: rendering revealed the policy holds in a deep forward lean, and the protocol's above-knee ground-contact clause was never enforced by any harness; the number stands only for the lift-and-hold criteria until re-evaluated with full clause enforcement. Commanded walking and kneeling (stand ↔ 0.32 m). The composed chain was measured end-to-end honestly for the first time: frozen-prior composition caps at the approach — a walking prior with no object in its observations steps on the target it cannot see (88–116 of 200 episodes ended with the object kicked over, while arrival placement, once achieved, was 12/12 inside the trained corridor). Current work trains a single whole-body policy instead; its first strict-criteria holds are on film. Judged episodes contain no scripted motion.
 
 Isaac Lab 2.3 / PhysX 5, RSL-RL PPO, 2048–4096 parallel environments, one rented GPU.
