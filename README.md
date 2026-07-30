@@ -82,6 +82,26 @@ A "workspace limit" measured by random action sampling pinned this project's har
 - Difficulty curricula act on physics with a fixed anneal schedule, never on the reward. Evaluation always runs at full difficulty.
 - Rigid-body simulation flatters grip stability: the 11-second holds will not transfer at that duration. The Inspire hand's physical fingertip force sensors are the planned bridge.
 
+## Latest footage (whole-body epoch)
+
+Both clips are the deterministic policy, no assists, honest captions —
+including the failures, because the failures are the finding.
+
+![Kneel-era grasp attempt: object secured at floor, lift incomplete](media/07_kneel_era_grasp.gif)
+
+Kneel-era lane: the policy reaches and secures the object at floor level;
+the lift does not complete. ([mp4](media/07_kneel_era_grasp.mp4))
+
+![Unified policy: skilled descent, then the hand tips the cylinder over](media/08_unified_descent_tipover.gif)
+
+Current unified whole-body lane: the descent is fast and precise — then the
+hand presses the cylinder over instead of wrapping it. The contact sensors
+register a "grasp" that is never load-bearing. Instrumented follow-up traced
+the lift failure to a measurable mechanism (knee-torque saturation in the
+learned deep posture vs. 2x headroom in the certified shallow-squat family,
+plus a contact-threshold artifact in the grasp predicate); the fixes are in
+the next training epoch. ([mp4](media/08_unified_descent_tipover.mp4))
+
 ## Status
 
 Done: strict floor grasp, 35.5% free-standing (one object geometry, easy end of protocol range) — **now carrying an asterisk**: rendering revealed the policy holds in a deep forward lean, and the protocol's above-knee ground-contact clause was never enforced by any harness; the number stands only for the lift-and-hold criteria until re-evaluated with full clause enforcement. Commanded walking and kneeling (stand ↔ 0.32 m). The composed chain was measured end-to-end honestly for the first time: frozen-prior composition caps at the approach — a walking prior with no object in its observations steps on the target it cannot see (88–116 of 200 episodes ended with the object kicked over, while arrival placement, once achieved, was 12/12 inside the trained corridor). Current work trains a single whole-body policy instead; its first strict-criteria holds are on film. Judged episodes contain no scripted motion.
