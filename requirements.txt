@@ -1,0 +1,11 @@
+# Standalone: local grasp lab (src/grasp_synth), tools/, tests/. No GPU.
+mujoco
+numpy
+torch
+pytest
+pillow
+imageio
+
+# Not installable from PyPI — the pod/ tree additionally needs:
+#   Isaac Sim + Isaac Lab 2.3  (see pod/setup_pod.sh)
+#   rsl_rl

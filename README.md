@@ -21,11 +21,14 @@ git -C assets/menagerie sparse-checkout set shadow_hand unitree_g1 sharpa_wave
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Eval, needs Isaac Lab + GPU ([`pod/setup_pod.sh`](pod/setup_pod.sh)):
+`src/`, `tools/` and `tests/` run standalone. The `pod/` tree needs Isaac Sim + Isaac Lab 2.3 and the G1 USD assets ([`pod/setup_pod.sh`](pod/setup_pod.sh)); banks ship as `.npz` and the env loads `.pt`:
 
 ```bash
+python tools/npz_to_pt.py --out-dir /workspace
 GRASP_NO_VIDEO=1 python pod/demo_grasp.py --ckpt banked/GRASP_ARTIFACT_laneYb_25200.pt --episodes 300
 ```
+
+Simulation only — no policy here has been run on a physical G1, and rigid-body contact flatters grip stability, so the 11 s holds will not transfer at that duration. What was checked instead is whether the simulator's own verdict could be trusted: contact sensing against scripted ground truth, banks against zero-action restore probes, and references against open-loop playback before training consumed them.
 
 ## Layout
 

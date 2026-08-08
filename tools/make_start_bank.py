@@ -7,23 +7,15 @@ start distribution's "arrived, ready to reach" slice does not depend on the
 walker checkpoint or a pod harvest.
 
 Mac side (numpy only — no torch here): emits refs/start_bank_certified.npz.
-Pod side: one-liner converts to .pt (see bottom of this docstring).
+Writes .npz; the env loads .pt. Convert with tools/npz_to_pt.py.
 
 Body joint values come from the wbik parameter vector (BODY_JOINTS order,
 names identical to the Isaac asset). Inspire hand joints are set to 0 (open);
 the GRASP_START_BANK loader remaps by joint NAME, so only names present in
 the bank matter and every Isaac joint must appear.
 
-    .venv/bin/python tools/make_start_bank.py
-    scp refs/start_bank_certified.npz humanoid-pod:/workspace/
-    ssh humanoid-pod '/workspace/venv/bin/python -c "
-import numpy as np, torch
-d = np.load(\"/workspace/start_bank_certified.npz\", allow_pickle=False)
-torch.save({\"joint_pos\": torch.tensor(d[\"joint_pos\"], dtype=torch.float32),
-            \"root_state\": torch.tensor(d[\"root_state\"], dtype=torch.float32),
-            \"joint_names\": [str(s) for s in d[\"joint_names\"]]},
-           \"/workspace/start_bank_certified.pt\")
-print(\"OK\", d[\"joint_pos\"].shape)"'
+    python tools/make_start_bank.py
+    python tools/npz_to_pt.py --out-dir /workspace
 """
 import os
 import sys

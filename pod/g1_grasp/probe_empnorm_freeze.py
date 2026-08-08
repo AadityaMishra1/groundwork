@@ -80,18 +80,34 @@ SEED = 3407
 
 
 def norm_hash(runner):
-    """md5 over every normalizer buffer the runner owns (+ sample count)."""
+    """md5 over every normalizer buffer the runner owns (+ sample count).
+
+    A missing buffer contributes an explicit ABSENT marker instead of being
+    skipped: this certificate exists to detect a normalizer that silently
+    became nn.Identity, so absence MUST change the digest. Raises if no
+    normalizer module is found at all -- a clean hexdigest computed over
+    nothing is precisely the false certificate this probe was written to
+    catch (see GRASP_EMPNORM in docs/POSTMORTEM_failure_catalogue.md).
+    """
     h = hashlib.md5()
+    found = 0
     for tag, m in find_empnorm_modules(runner):
+        found += 1
         h.update(tag.encode())
         for b in ("_mean", "_var", "_std"):
             t = getattr(m, b, None)
-            if t is not None:
+            if t is None:
+                h.update(f"<ABSENT:{b}>".encode())
+            else:
                 h.update(t.detach().to("cpu", torch.float64).numpy().tobytes())
-        try:
-            h.update(str(int(m.count)).encode())
-        except Exception:
-            pass
+        count = getattr(m, "count", None)
+        h.update(b"<ABSENT:count>" if count is None
+                 else str(int(count)).encode())
+    if found == 0:
+        raise RuntimeError(
+            "norm_hash: no empirical-normalization module on the runner. "
+            "Refusing to return a digest over nothing."
+        )
     return h.hexdigest()
 
 
