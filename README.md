@@ -89,6 +89,7 @@ tools/make_ref_traj.py       trajectory optimizer (the one that produced the bad
 tools/wbik.py, statics.py    35-DoF whole-body IK + friction-cone contact QP, CPU
 tools/cert_*.py              reward-term activation certificates
 src/grasp_synth/             local MuJoCo grasp lab, no GPU
+banked/                      the two checkpoints the 76.3% was measured on
 docs/                        postmortem, protocol
 media/                       footage, successes and failures both
 ```
@@ -105,7 +106,18 @@ git -C assets/menagerie sparse-checkout set shadow_hand unitree_g1 sharpa_wave
 .venv/bin/python -m pytest tests/ -q          # local grasp lab, no GPU
 ```
 
-GPU training targets Isaac Lab 2.3 / PhysX 5, RSL-RL PPO, 2048–4096 parallel envs on one rented GPU — [`pod/setup_pod.sh`](pod/setup_pod.sh). Weights are not distributed.
+GPU training targets Isaac Lab 2.3 / PhysX 5, RSL-RL PPO, 2048–4096 parallel envs on one rented GPU — [`pod/setup_pod.sh`](pod/setup_pod.sh).
+
+**Reproduce the 76.3%.** The checkpoint the number was measured on ships in [`banked/`](banked/):
+
+```bash
+GRASP_NO_VIDEO=1 python pod/demo_grasp.py \
+  --ckpt banked/GRASP_ARTIFACT_laneYb_25200.pt --episodes 300
+```
+
+[`demo_grasp.py`](pod/demo_grasp.py) computes STRICT and STRICT_LEGAL inline and prints both — the letter-strict count and the count with neither the waist-fold nor the hand-plant flag raised. Quote both, always; the gap between them is the whole lesson above.
+
+`banked/GRASP_ARTIFACT_laneYb_25799.pt` is the sibling checkpoint 599 iterations later, shipped deliberately: run it and watch the number move. That spread is the non-stationarity, not noise — a frozen checkpoint scored three times returns 6/9/4 per 100, so the evaluation is reproducible and the policy is what is moving.
 
 Earlier stages: [walking](media/01_walking.gif) · [walk-crouch-stand](media/02_walk_crouch_stand.gif) · [first pickups, 5%](media/04_first_floor_pickups_5pct.gif) · [pre-fix plateau, 7%](media/05_grasp_progress_7pct.gif) · [kneel-era](media/07_kneel_era_grasp.gif) · [descent + tipover](media/08_unified_descent_tipover.gif)
 

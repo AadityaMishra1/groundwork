@@ -1,4 +1,5 @@
 *.pt
+!banked/*.pt
 *.usd
 __pycache__/
 .venv/
