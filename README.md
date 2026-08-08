@@ -52,6 +52,12 @@ Pelvis 0.233 m is on the floor. The reference was a sequence of statically-valid
 
 Five interventions in one day — rise income, full-body tracking, base-only tracking, a raised gate, a backward curriculum — were all aimed at a motion the robot cannot perform. The probe runs in minutes and costs nothing. It was written after the money was gone.
 
+The offending bank ships in [`refs/`](refs/), so this is checkable rather than assertable:
+
+```bash
+GRASP_REF_BANK=refs/ref_traj_bank_gc2.npz python pod/g1_grasp/probe_descent_authority.py
+```
+
 Corollary: the lunge may never have been a defect. A splayed straight-legged stance carries load through geometry rather than torque. The policy likely found the demonstrated motion unusable and invented what works.
 
 ## Four more defects
@@ -66,7 +72,7 @@ Corollary: the lunge may never have been a defect. A splayed straight-legged sta
 
 **Value clipping and entropy.** `use_clipped_value_loss=True` with no value normalization over a 17-term critic at 30:1 scale imbalance. Removing the clip alone then exploded action noise 0.50 → 0.92 — `entropy_coef > 0` on a state-independent log-std is a permanent upward gradient. The two fixes are a documented pair; shipping one exposed the other.
 
-Full writeup: **[docs/POSTMORTEM_failure_catalogue.md](docs/POSTMORTEM_failure_catalogue.md)**.
+Full writeup: **[docs/POSTMORTEM_failure_catalogue.md](docs/POSTMORTEM_failure_catalogue.md)**. Supporting autopsies: [the sprawl](docs/WAISTFOLD_AUTOPSY_2026-07-30.md), and [an independent review](docs/OUTSIDE_REVIEW_2026-07-29.md) that ran its own lift-authority probe and reported its control arm dirty rather than quoting the verdict.
 
 ## Protocol
 
@@ -90,7 +96,8 @@ tools/wbik.py, statics.py    35-DoF whole-body IK + friction-cone contact QP, CP
 tools/cert_*.py              reward-term activation certificates
 src/grasp_synth/             local MuJoCo grasp lab, no GPU
 banked/                      the two checkpoints the 76.3% was measured on
-docs/                        postmortem, protocol
+refs/                        reference banks, incl. gc2 — the impossible one
+docs/                        postmortem, protocol, two autopsies
 media/                       footage, successes and failures both
 ```
 
