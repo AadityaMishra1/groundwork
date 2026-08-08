@@ -78,13 +78,16 @@ from isaaclab_tasks.utils import parse_env_cfg
 import isaaclab_tasks  # noqa: F401
 import g1_grasp  # noqa: F401
 
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
+
 
 def main():
     # the probe reads the SAME file the env loads — no policy anywhere.
     # allow_pickle: the bank is produced by this project's own harvester on
     # the pod (trusted path, same trust model as every torch.load bank
     # already in grasp_env.py); joint_names may be an object array.
-    bank_path = os.environ.get("GRASP_REF_BANK", "/workspace/ref_traj_bank.npz")
+    bank_path = os.environ.get("GRASP_REF_BANK", f"{_WS}/ref_traj_bank.npz")
     bank = np.load(bank_path, allow_pickle=True)
     R = int(bank["joint_pos"].shape[0])
     T = int(bank["joint_pos"].shape[1])
@@ -95,7 +98,7 @@ def main():
                    render_mode=None if _NOVID else "rgb_array")
     if not _NOVID:
         env = gym.wrappers.RecordVideo(
-            env, video_folder="/workspace/demo_videos",
+            env, video_folder=f"{_WS}/demo_videos",
             step_trigger=lambda s: s == 0,
             # must finalize inside the run (the 800 lesson): capture less
             # than the probe's total steps

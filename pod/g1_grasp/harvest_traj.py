@@ -36,7 +36,7 @@ import cli_args  # isort: skip
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_envs", type=int, default=64)
 parser.add_argument("--steps", type=int, default=6000)
-parser.add_argument("--out", type=str, default="/workspace/traj_bank.pt")
+parser.add_argument("--out", type=str, default=f"{_WS}/traj_bank.pt")
 parser.add_argument("--snap_every", type=int, default=10,
                     help="buffer a snapshot every N steps per env")
 parser.add_argument("--max_per_phase", type=int, default=3000)
@@ -59,6 +59,9 @@ from isaaclab_tasks.utils import parse_env_cfg
 
 import isaaclab_tasks  # noqa: F401
 import g1_grasp  # noqa: F401
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 PHASES = ("approach", "closing", "lift", "hold")
 

@@ -33,9 +33,12 @@ from isaaclab_tasks.manager_based.locomotion.velocity.config.g1.flat_env_cfg imp
 )
 from isaaclab_assets.robots.unitree import G1_INSPIRE_FTP_CFG
 
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
+
 # free-root variant: mimic-joint APIs stripped (fix_usd.py) — the shipped
 # asset's finger couplings fail articulation parsing when the root is freed
-LOCAL_USD = "/workspace/assets/G1/g1_29dof_inspire_hand_free.usd"
+LOCAL_USD = f"{_WS}/assets/G1/g1_29dof_inspire_hand_free.usd"
 
 BODY_JOINTS = [
     ".*_hip_yaw_joint", ".*_hip_roll_joint", ".*_hip_pitch_joint",

@@ -42,7 +42,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--num_envs", type=int, default=16)
 parser.add_argument("--steps", type=int, default=6000)
 parser.add_argument("--min_z", type=float, default=0.15)
-parser.add_argument("--out", type=str, default="/workspace/grasp_offset_samples.pt")
+parser.add_argument("--out", type=str, default=f"{_WS}/grasp_offset_samples.pt")
 cli_args.add_rsl_rl_args(parser)
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
@@ -62,6 +62,9 @@ from isaaclab_tasks.utils import parse_env_cfg  # noqa: E402
 
 import isaaclab_tasks  # noqa: F401, E402
 import g1_grasp  # noqa: F401, E402
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 
 def quat_conj(q):

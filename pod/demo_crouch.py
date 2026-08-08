@@ -13,7 +13,7 @@ import cli_args  # isort: skip
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt", type=str, required=True)
-parser.add_argument("--video_dir", type=str, default="/workspace/demo_videos")
+parser.add_argument("--video_dir", type=str, default=f"{_WS}/demo_videos")
 cli_args.add_rsl_rl_args(parser)
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
@@ -37,6 +37,9 @@ import isaaclab_tasks  # noqa: F401
 import g1_crouch  # noqa: F401
 
 import cli_args
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 
 def main():

@@ -21,7 +21,7 @@ git -C assets/menagerie sparse-checkout set shadow_hand unitree_g1 sharpa_wave
 .venv/bin/python -m pytest tests/ -q
 ```
 
-`src/`, `tools/` and `tests/` run standalone. The `pod/` tree needs Isaac Sim + Isaac Lab 2.3 and the G1 USD assets ([`pod/setup_pod.sh`](pod/setup_pod.sh)); banks ship as `.npz` and the env loads `.pt`:
+`src/`, `tools/` and `tests/` run standalone. The `pod/` tree needs Isaac Sim + Isaac Lab 2.3 and the G1 USD assets ([`pod/setup_pod.sh`](pod/setup_pod.sh)). Paths default to `/workspace`; set `GW_ROOT` to relocate. Banks ship as `.npz` and the env loads `.pt`:
 
 ```bash
 python tools/npz_to_pt.py --out-dir /workspace

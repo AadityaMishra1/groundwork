@@ -41,7 +41,7 @@ parser.add_argument("--scan", action="store_true",
 parser.add_argument("--episodes", type=int, default=1)
 parser.add_argument("--free", action="store_true",
                     help="free-root robot + gravity (composition physics)")
-parser.add_argument("--video_dir", type=str, default="/workspace/demo_videos")
+parser.add_argument("--video_dir", type=str, default=f"{_WS}/demo_videos")
 cli_args.add_rsl_rl_args(parser)
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
@@ -73,6 +73,9 @@ import isaaclab_tasks  # noqa: F401
 import g1_grasp  # noqa: F401
 
 import cli_args
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 EP_STEPS = 600  # 12 s at 50 Hz
 

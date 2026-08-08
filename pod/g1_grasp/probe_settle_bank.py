@@ -13,7 +13,7 @@ import argparse
 from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--out", type=str, default="/workspace/settled_poses.pt")
+parser.add_argument("--out", type=str, default=f"{_WS}/settled_poses.pt")
 parser.add_argument("--rounds", type=int, default=6)
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
@@ -25,6 +25,9 @@ import torch
 from isaaclab_tasks.utils import parse_env_cfg
 import isaaclab_tasks  # noqa: F401
 import g1_grasp  # noqa: F401
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 
 def main():

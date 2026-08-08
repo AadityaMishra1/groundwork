@@ -16,7 +16,7 @@ import cli_args  # isort: skip
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt", type=str, required=True)
-parser.add_argument("--out", type=str, default="/workspace/handoff_poses.pt")
+parser.add_argument("--out", type=str, default=f"{_WS}/handoff_poses.pt")
 # PLAN_2026-07-25 P0: the composition dwell moved from the (impossible) deep
 # kneel to the certified shallow squat band — capture arrivals at 0.50 too.
 parser.add_argument("--target", type=float, default=0.32,
@@ -38,6 +38,9 @@ from isaaclab_tasks.utils import parse_env_cfg
 
 import isaaclab_tasks  # noqa: F401
 import g1_loco  # noqa: F401
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 CROUCH_LEGS = {
     ".*_hip_pitch_joint": -2.2, ".*_knee_joint": 2.8, ".*_ankle_pitch_joint": -0.87,

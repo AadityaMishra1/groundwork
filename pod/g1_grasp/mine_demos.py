@@ -37,6 +37,9 @@ from g1_grasp.grasp_env import (
     ACTION_JOINTS, FINGER_BODIES, G1GraspEnv, G1GraspEnvCfg,
 )
 
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
+
 PELVIS_Z = 0.20
 FOLD_LEGS = {
     ".*_hip_pitch_joint": -2.2, ".*_knee_joint": 2.8, ".*_ankle_pitch_joint": -0.87,
@@ -224,7 +227,7 @@ def main():
                  "joint_names": robot.joint_names,
                  "meta": {"pelvis_z": PELVIS_Z, "obj_h": OBJ_H, "obj_r": OBJ_R,
                           "obj_m": OBJ_M, "fold_legs": FOLD_LEGS}},
-                "/workspace/pregrasp_bank.pt")
+                f"{_WS}/pregrasp_bank.pt")
 
     total = sum(len(b) for b in bank_q) if bank_q else 0
     print(f"BANK_SIZE={total}")

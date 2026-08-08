@@ -21,7 +21,10 @@ from isaaclab.utils import configclass
 
 from isaaclab_assets.robots.unitree import G1_INSPIRE_FTP_CFG
 
-LOCAL_USD = "/workspace/assets/G1/g1_29dof_inspire_hand.usd"
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
+
+LOCAL_USD = f"{_WS}/assets/G1/g1_29dof_inspire_hand.usd"
 
 # UNIFIED MODE (GRASP_FULLBODY=1, 2026-07-25): one policy owns the whole
 # body. Motivated by measurement, not preference: the composed chain's
@@ -102,7 +105,7 @@ CROUCH_LEGS = {
 # stage 2 = start in kneel, object at a bank-verified reachable xy
 # stage 3 = full task, object anywhere in the annulus
 # Per-env stage advances when that env's recent success EMA clears the bar.
-BANK_PATH = "/workspace/pregrasp_bank.pt"
+BANK_PATH = f"{_WS}/pregrasp_bank.pt"
 N_STAGES = 4
 STAGE_UP_EMA = 0.5
 STAGE_DOWN_EMA = 0.02
@@ -194,7 +197,7 @@ class G1GraspEnvCfg(DirectRLEnvCfg):
         # stays the fixed-root rig the r6 checkpoints were trained on.
         free = _os.environ.get("GRASP_FREE", "0") == "1"
         self.robot.spawn.usd_path = (
-            "/workspace/assets/G1/g1_29dof_inspire_hand_free.usd" if free
+            f"{_WS}/assets/G1/g1_29dof_inspire_hand_free.usd" if free
             else LOCAL_USD)
         self.robot.spawn.articulation_props.fix_root_link = not free
         self.robot.spawn.rigid_props.disable_gravity = not free and \
@@ -731,7 +734,7 @@ class G1GraspEnv(DirectRLEnv):
         if self.ref_track:
             import numpy as _np
             _rpath = _os.environ.get("GRASP_REF_BANK",
-                                     "/workspace/ref_traj_bank.npz")
+                                     f"{_WS}/ref_traj_bank.npz")
             # allow_pickle: bank produced by this project's own harvester on
             # the pod — same trust model as the torch.load banks above
             # (joint_names may be an object array)

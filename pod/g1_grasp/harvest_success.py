@@ -31,7 +31,7 @@ import cli_args  # isort: skip
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_envs", type=int, default=64)
 parser.add_argument("--steps", type=int, default=6000)
-parser.add_argument("--out", type=str, default="/workspace/chain_bank_grasp.pt")
+parser.add_argument("--out", type=str, default=f"{_WS}/chain_bank_grasp.pt")
 parser.add_argument("--max_per_family", type=int, default=2000)
 # snapshot cadence per env: don't bank near-duplicate consecutive frames
 parser.add_argument("--min_gap", type=int, default=25)
@@ -54,6 +54,9 @@ from isaaclab_tasks.utils import parse_env_cfg
 
 import isaaclab_tasks  # noqa: F401
 import g1_grasp  # noqa: F401
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 
 def main():

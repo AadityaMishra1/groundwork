@@ -30,7 +30,10 @@ from isaaclab.utils import configclass
 
 from isaaclab_assets.robots.unitree import G1_INSPIRE_FTP_CFG
 
-FREE_USD = "/workspace/assets/G1/g1_29dof_inspire_hand_free.usd"
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
+
+FREE_USD = f"{_WS}/assets/G1/g1_29dof_inspire_hand_free.usd"
 
 STAND = {
     ".*_hip_pitch_joint": -0.20, ".*_knee_joint": 0.42,

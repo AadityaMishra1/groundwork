@@ -21,8 +21,8 @@ app = AppLauncher(args).app
 
 from pxr import Usd, UsdPhysics
 
-SRC = "/workspace/assets/G1/g1_29dof_inspire_hand.usd"
-DST = "/workspace/assets/G1/g1_29dof_inspire_hand_free.usd"
+SRC = f"{_WS}/assets/G1/g1_29dof_inspire_hand.usd"
+DST = f"{_WS}/assets/G1/g1_29dof_inspire_hand_free.usd"
 
 # flatten FIRST: root_joint and the APIs live in referenced sub-layers, so
 # edits on the composed stage are silently discarded by composition
@@ -57,5 +57,8 @@ print(f"FIX_USD_DONE mimic_removed={removed} old_roots={art_root_paths} "
       f"root_joints_removed={root_joint_paths} new_root={pelvis_path} -> {DST}")
 
 import os, sys
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 sys.stdout.flush()
 os._exit(0)

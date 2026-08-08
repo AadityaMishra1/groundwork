@@ -18,7 +18,7 @@ from isaaclab.app import AppLauncher
 parser = argparse.ArgumentParser()
 parser.add_argument("--rounds", type=int, default=20)
 parser.add_argument("--num_envs", type=int, default=512)
-parser.add_argument("--out", type=str, default="/workspace/bc_demos.pt")
+parser.add_argument("--out", type=str, default=f"{_WS}/bc_demos.pt")
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 app = AppLauncher(args).app
@@ -26,6 +26,9 @@ app = AppLauncher(args).app
 import torch
 
 from g1_grasp.grasp_env import ACTION_JOINTS, G1GraspEnv, G1GraspEnvCfg
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 PELVIS_Z = 0.20
 FOLD_LEGS = {
@@ -41,7 +44,7 @@ PHYS_PER_TICK = 4     # 200 Hz physics, 50 Hz control
 
 
 def main():
-    bank = torch.load("/workspace/pregrasp_bank.pt", weights_only=True)
+    bank = torch.load(f"{_WS}/pregrasp_bank.pt", weights_only=True)
     n_bank = len(bank["obj_pos"])
     print(f"bank entries: {n_bank}")
 

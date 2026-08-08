@@ -21,13 +21,16 @@ from isaaclab.sim import SimulationContext
 
 from isaaclab_assets.robots.unitree import G1_INSPIRE_FTP_CFG
 
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
+
 
 def main():
     sim = SimulationContext(sim_utils.SimulationCfg(dt=1 / 200, device="cuda:0"))
     ground = sim_utils.GroundPlaneCfg()
     ground.func("/World/ground", ground)
     cfg = G1_INSPIRE_FTP_CFG.replace(prim_path="/World/G1")
-    cfg.spawn.usd_path = "/workspace/assets/G1/g1_29dof_inspire_hand.usd"
+    cfg.spawn.usd_path = f"{_WS}/assets/G1/g1_29dof_inspire_hand.usd"
     robot = Articulation(cfg)
     sim.reset()
 

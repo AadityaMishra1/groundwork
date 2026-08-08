@@ -14,7 +14,7 @@ from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--entries", type=int, default=6)
-parser.add_argument("--out", type=str, default="/workspace/demo_videos/scripted_grasp.mp4")
+parser.add_argument("--out", type=str, default=f"{_WS}/demo_videos/scripted_grasp.mp4")
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 app = AppLauncher(args).app
@@ -23,6 +23,9 @@ import imageio
 import torch
 
 from g1_grasp.grasp_env import ACTION_JOINTS, G1GraspEnv, G1GraspEnvCfg
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 # keep in sync with mine_demos.py (not imported: its module top-level
 # launches its own AppLauncher)
@@ -38,7 +41,7 @@ FRAME_EVERY = 4  # 200 Hz physics -> 50 fps
 
 
 def main():
-    bank = torch.load("/workspace/pregrasp_bank.pt", weights_only=True)
+    bank = torch.load(f"{_WS}/pregrasp_bank.pt", weights_only=True)
     print(f"bank size: {len(bank['joint_pos'])}")
 
     cfg = G1GraspEnvCfg()

@@ -16,7 +16,7 @@ parser.add_argument("--ckpt", type=str, required=True)
 parser.add_argument("--episodes", type=int, default=200)
 parser.add_argument("--stochastic", action="store_true",
                     help="sample actions like training rollouts — separates skill-exists-mean-lags from skill-absent")
-parser.add_argument("--video_dir", type=str, default="/workspace/demo_videos")
+parser.add_argument("--video_dir", type=str, default=f"{_WS}/demo_videos")
 cli_args.add_rsl_rl_args(parser)
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
@@ -43,6 +43,8 @@ import isaaclab_tasks  # noqa: F401
 import g1_grasp  # noqa: F401
 
 import cli_args
+
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 
 def main():

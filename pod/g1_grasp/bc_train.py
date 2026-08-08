@@ -14,8 +14,8 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt", required=True)
-parser.add_argument("--demos", default="/workspace/bc_demos.pt")
-parser.add_argument("--out", default="/workspace/bc_init.pt")
+parser.add_argument("--demos", default=f"{_WS}/bc_demos.pt")
+parser.add_argument("--out", default=f"{_WS}/bc_init.pt")
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--lr", type=float, default=3e-4)
 args = parser.parse_args()
@@ -23,6 +23,9 @@ args = parser.parse_args()
 dev = "cuda" if torch.cuda.is_available() else "cpu"
 
 from rsl_rl.modules import ActorCritic
+
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
 
 ac = ActorCritic(69, 69, 20,
                  actor_hidden_dims=[512, 256, 128],

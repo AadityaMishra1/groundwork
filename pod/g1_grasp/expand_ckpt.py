@@ -13,9 +13,12 @@ import argparse
 
 import torch
 
+import os as _os
+_WS = _os.environ.get("GW_ROOT", "/workspace")
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt", required=True)
-parser.add_argument("--out", default="/workspace/tactile_init.pt")
+parser.add_argument("--out", default=f"{_WS}/tactile_init.pt")
 parser.add_argument("--old_dim", type=int, default=69)
 parser.add_argument("--new_dim", type=int, default=90)
 args = parser.parse_args()
