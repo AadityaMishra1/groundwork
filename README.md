@@ -2,9 +2,15 @@
 
 Unitree G1 + Inspire five-finger hands learning to pick objects off the floor. Isaac Lab, PPO from scratch — no demonstrations, no teleoperation, no motion capture.
 
-![Floor grasp](media/result_lunge_hold_76pct.gif)
+![Floor pickup](media/06_strict_pickup.gif)
 
 **76.3% legal floor grasp** from near starts (229/300), 75.3% in a stricter env. Lift to 0.40 m, held 3+ s, ≥3 finger links plus thumb opposition in engine-verified contact, object touching hand links only. Near starts only — 0% on the full 1–4 m protocol, the walk leg was never chained in.
+
+Clip above is the pelvis-fixed policy (28.2% at random placement), which has the cleanest footage. The free-standing policy the 76.3% was measured on holds in a deep lunge instead — [footage](media/result_lunge_hold_76pct.gif).
+
+![Walk, crouch, stand](media/02_walk_crouch_stand.gif)
+
+Walking and kneeling experts, 2048 envs. [Closer crouch](media/04_first_floor_pickups_5pct.gif).
 
 ## Run
 
