@@ -1,109 +1,114 @@
 # groundwork
 
-A Unitree G1 with Inspire five-finger hands learns to pick objects off the floor. RL in simulation. No demonstrations, no teleoperation, no motion capture. One rented GPU, under $250.
+A Unitree G1 with Inspire five-finger hands learns to pick objects off the floor. RL in simulation — no demonstrations, no teleoperation, no motion capture. One rented GPU, ~$400 total.
 
-**35.5% success (142/400), strict protocol, robot balancing on its own legs.**
+**76.3% legal floor grasp from near starts** (229/300, reproduced in two environments). **0% on the full protocol**, because the walk leg was never chained in. The project did not finish.
 
-Success = lift to 0.40 m, hold 3 continuous seconds, with ≥3 finger links plus thumb in engine-verified contact. Random object position and orientation, deterministic policy, 400 episodes, failure taxonomy published. Protocol was fixed before the runs: [docs/EVAL_PROTOCOL.md](docs/EVAL_PROTOCOL.md), scoring in [pod/demo_grasp.py](pod/demo_grasp.py). Weights and training stack are not distributed.
+Every headline number this produced before it built cheat detectors was wrong. That turned out to be the interesting part.
 
-![Strict-protocol floor pickup](media/06_strict_pickup.gif)
+---
 
-One uncut episode at a user-chosen position (earlier pelvis-fixed policy; success varies with placement — the random-position rate for that policy is 28.2%). More episodes: [media/06_strict_pickup.mp4](media/06_strict_pickup.mp4). Choose positions yourself: [pod/demo_pickup.py](pod/demo_pickup.py).
+## The metric said 91.1% strict success
 
-## Numbers
+![91% strict success, and completely fake](media/hack_crab_sprawl_91pct.gif)
 
-![Success progression](media/fig1_success_progression.png)
+Posture telemetry read "upright." Hand planted flat on the floor as a tripod, torso folded ~70°, object pinned against its own thigh.
 
-| Round | Strict success | Change |
-|---|---|---|
-| Baseline PPO | 0% | — |
-| Instrumentation + curriculum repairs | ~7% | intermediate metrics up, success flat |
-| Tactile observations | ~9% | touch→grip 54% → 64% |
-| Action-space restructure | 28.2% | lift→hold 17% → 97% |
-| Free-standing robot | 35.5% | same protocol, no fixed base |
+Every term in the posture gate was computed on the root link — up-vector, pelvis height, and a min-z check over a body set that excluded the hand chain. Torso pitch was never measured, so the fold was invisible. Hand links were excluded from the floor check, so the tripod was invisible. **Telemetry built from a gate's own terms cannot detect an exploit of that gate.**
 
-Same protocol every row.
+| generation | metric said | footage showed | detector built |
+|---|---|---|---|
+| crab sprawl | 87–91% strict | tripod hand, folded torso, object on thigh | torso up-vector + hand-floor contact ([`probe_waistfold.py`](pod/g1_grasp/probe_waistfold.py)) |
+| thigh pin | 50% legal | upright, hands free — object pressed to thigh | object-to-leg-link distance (`STRICT_OBJLEG`) |
+| hand carry | 76% legal | genuine finger-wrapped carry | — |
 
-## The plateau at 7%, and its cause
+Each defect strictly narrower than the last. Detectors were certified both ways before use: flag known-bad footage ≥95%, pass known-good states ≤5%. `probe_waistfold.py` caught 60/60 sprawls with 1 false positive in 654.
 
-Among "successful lifts," the median continuous hold was 0 frames. Median object speed at grip loss: 2.8 m/s. The policy threw objects. It did not drop them.
+## What it actually does
 
-Cause: the policy sent absolute joint-position targets at 50 Hz. PPO exploration noise moved the finger targets a large fraction of full travel each step, so no grasp survived training. The value function learned that holds never persist and priced holding at zero. Grab-and-throw was the optimal policy. A reward cannot reinforce a behavior that exploration destroys before it pays.
+![Banked policy: deep lunge, five-finger grip, never stands](media/result_lunge_hold_76pct.gif)
 
-Three checks before changing anything: scripted grasps with frozen targets hold indefinitely under the same physics; six reward and physics interventions did not move the plateau; rate-limiting a trained policy stopped the throwing immediately, along with its competence.
+Crouches to a cylinder (r=45 mm, h=15 cm, 0.5 kg), closes five fingers in a friction grasp, lifts to 0.40 m, holds 3+ s.
 
-Fix: delta actions. The zero action holds the current targets — a fixed point under noise. Results from one training run: lift→hold 17% → 97%. Median hold 0 frames → 11+ s. Grip-loss speed 2.8 → 0.00 m/s. Throws 121 → 9 per 400 episodes.
+| environment | strict | legal | share |
+|---|---|---|---|
+| official eval | 237/300 | 229 | **76.3%** |
+| stricter (extra gate terms) | 233/300 | 226 | 75.3% |
+
+Caveats that travel with the number: near starts only; it holds in the deep lunge above and never stands; one checkpoint from a lane that never converged, whose siblings 200 iterations apart span **6%–88%**.
+
+An earlier free-standing result of 35.5% (142/400) at random object positions is **withdrawn** — it was measured before the detectors above existed, in the deep-lean posture family they were built to catch, with the protocol's above-knee ground-contact clause unenforced by any harness.
+
+## Why it stopped
+
+[`probe_descent_authority.py`](pod/g1_grasp/probe_descent_authority.py) drives the action integrator along the reference by exact inversion — no policy, the ceiling of what any controller could achieve:
+
+```
+DESCENT  frames   0-150 : saturation 0.123   pelvis achieved 0.434   ref 0.560
+RISE     frames 150-250 : saturation 0.122   pelvis achieved 0.233   ref 0.568
+```
+
+Pelvis 0.233 m is on the floor. The reference was a sequence of statically-valid IK poses, never checked against gravity or contact — **dynamically impossible**. Saturation at 12% means the rate limit wasn't binding; the trajectory simply cannot be executed.
+
+Five interventions in one day — rise income, full-body tracking, base-only tracking, a raised gate, a backward curriculum — were all aimed at a motion the robot cannot perform. The probe runs in minutes and costs nothing. It was written after the money was gone.
+
+Corollary: the lunge may never have been a defect. A splayed straight-legged stance carries load through geometry rather than torque. The policy likely found the demonstrated motion unusable and invented what works.
+
+## Four more defects
+
+**The action space, not the reward.** At 7% success the median continuous hold was 0 frames and median object speed at grip loss was 2.8 m/s — the policy *threw* objects. Absolute joint targets at 50 Hz meant PPO exploration noise moved fingers a large fraction of full travel each step, so no grasp survived training. Delta actions make the zero action a fixed point under noise: lift→hold 17% → 97%, holds 0 → 11 s, throws 121 → 9 per 400.
 
 ![Action-space signature](media/fig2_actionspace_signature.png)
-![Outcome shift](media/fig3_outcome_shift.png)
 
-Throws are near zero from the first training hour: the throwing was an artifact of the action space, not a habit to unlearn.
+**Reset-boundary reads** — six instruments. Episode resets happen *inside* `step()`: state buffers show the fresh reset, sensor buffers and dones lag. A harvester captured 435 "grasp states" that were all spawn poses with no grasp — root height identical to 6 decimals, zero velocities. Three training runs died on that bank. Identical values across a harvested dataset are the fingerprint of capturing the reset writer.
 
-## Context
+**A normalizer that was never instantiated.** `isaaclab_rl` supplies `actor_obs_normalization: {}`; rsl_rl's deprecation shim fills the new key only when the old is `None`. `{}` is not `None`, and `{}` is falsy — observation normalization silently became `nn.Identity`, and 205 raw mixed-scale dims hit the first layer for an entire epoch. Three sibling mechanisms were live-but-inert the same night, including a reward paying zero on 95.8% of observed frames.
 
-Bench-mounted dexterous RL ([Dactyl](https://openai.com/index/learning-dexterity/), [DexPBT](https://arxiv.org/pdf/2210.13702)) gets reach and support from the mount; here the robot reaches the floor from its own squat. Humanoid ground pickup today ([CLONE](https://arxiv.org/abs/2506.08931), [HumanPlus/ResMimic](https://github.com/YanjieZe/awesome-humanoid-robot-learning)) trains on teleoperation or human motion data; this does not. Compute here is two-plus orders of magnitude below any of them. Tasks and protocols differ — the numbers do not compare directly.
+**Value clipping and entropy.** `use_clipped_value_loss=True` with no value normalization over a 17-term critic at 30:1 scale imbalance. Removing the clip alone then exploded action noise 0.50 → 0.92 — `entropy_coef > 0` on a state-independent log-std is a permanent upward gradient. The two fixes are a documented pair; shipping one exposed the other.
 
-We tried a demonstration pipeline: 1 usable demo per 10,000 attempts. Cut. A mined bank of pre-grasp states (not trajectories) seeded some mid-round resets; the final policies train from random initialization.
+Full writeup: **[docs/POSTMORTEM_failure_catalogue.md](docs/POSTMORTEM_failure_catalogue.md)**.
 
-All results are simulation. If prior work covers this combination, open an issue and we will cite it.
+## Protocol
 
-## Instrumentation
+[`docs/EVAL_PROTOCOL.md`](docs/EVAL_PROTOCOL.md), fixed before the runs. Six simultaneous conditions; hand-links-only contact verified from the PhysX contact report, not joint angles. Asserted every step: no fixed/D6 joints between hand and object, no inflated fingertip colliders, torques clamped to spec, no non-physical state writes after t=0.
 
-Contact sensing was validated against scripted ground truth before any learned number was trusted (a PhysX contact sensor silently returns an empty force matrix if one sensor prim matches multiple bodies — every contact reward read zero while training ran anyway):
+Contact sensing was validated against scripted ground truth first — a PhysX sensor silently returns an empty force matrix when one prim matches multiple bodies, so every contact reward read zero while training ran anyway:
 
 ![Scripted grasp verification](media/03_scripted_grasp_verification.gif)
 
-Earlier stages — round-1 walking on the stock handless G1, first full-task pickups (5%), and the pre-fix plateau (~7%: approach works, holds fail):
+The vendor asset ships with self-collision off, gravity disabled on links, and the base bolted in space. Every number here runs with all three corrected.
 
-![Walking](media/01_walking.gif)
-![Walk, crouch, stand](media/02_walk_crouch_stand.gif)
-![First floor pickups](media/04_first_floor_pickups_5pct.gif)
-![Pre-redesign grasping](media/05_grasp_progress_7pct.gif)
+## Layout
 
-### The reset-boundary bug family
+```
+pod/g1_grasp/grasp_env.py    training environment, 2.2k lines
+pod/g1_grasp/agents.py       PPO config
+pod/g1_grasp/probe_*.py      ~30 probes, one falsifiable question each
+pod/g1_loco/                 locomotion + kneel experts, handoff probes
+tools/make_ref_traj.py       trajectory optimizer (the one that produced the bad reference)
+tools/wbik.py, statics.py    35-DoF whole-body IK + friction-cone contact QP, CPU
+tools/cert_*.py              reward-term activation certificates
+src/grasp_synth/             local MuJoCo grasp lab, no GPU
+docs/                        postmortem, protocol
+media/                       footage, successes and failures both
+```
 
-One bug class claimed five instruments in this project, each producing confident, precise-looking numbers that were pure artifact. In a parallel-env simulator, episode resets happen *inside* `step()`: state buffers reflect the freshly-written reset pose immediately, while sensor buffers and done-semantics lag or conflate. Any read that spans that boundary measures a chimera:
+## Run
 
-- An eval counted episode *truncation* as falls — with 10 s hold windows against a 20 s clock, every second test condition read 62/64 "fell" while tracking perfectly (an alternating comb across conditions is the fingerprint).
-- A rollout harness read robot state post-step — i.e. post-auto-reset — so a falling robot respawned before the check could see it. Its "fell: 0" was structurally incapable of being anything else.
-- A data harvester captured "grasp states" on reset steps: fresh spawn pose from the state buffers, *stale pre-reset contact flags* from the sensors. All 435 harvested grasps were spawn poses with no grasp — root height identical to 6 decimal places across the set, zero velocities. Identical values across a harvested dataset are the fingerprint of capturing the reset writer, not the behavior.
-- A validity filter (`uprightness > 0.7`, meant as "never bank a falling robot") silently rejected every *real* grasp — the trained policy's true hold posture leaned past 45° — while passing the perfectly-upright counterfeits. Print the quantiles of every filter conjunct before trusting an empty result.
+```bash
+uv venv --python 3.11 .venv && uv pip install mujoco numpy pytest pillow imageio
 
-Rules that ended the class: guard every cross-buffer read with `(~dones) & (episode_length > ~10)`; detect falls from state (pelvis height, up-vector), never from dones; and **validate every harvested dataset with a zero-action restore probe** — spawn from the bank, command nothing, and the claimed property must be present at t=1 (`pod/g1_grasp/probe_cage.py` is the template).
+# hand/robot models — sparse clone, ~85 MB instead of the full Menagerie
+git clone --filter=blob:none --sparse https://github.com/google-deepmind/mujoco_menagerie assets/menagerie
+git -C assets/menagerie sparse-checkout set shadow_hand unitree_g1 sharpa_wave
 
-### Certify kinematics before training toward them
+.venv/bin/python -m pytest tests/ -q          # local grasp lab, no GPU
+```
 
-A "workspace limit" measured by random action sampling pinned this project's hardest constraint for two weeks — until constrained whole-body optimization (35-DoF IK with foot-contact, support-polygon, and self-collision constraints, then a friction-cone contact-force QP against spec torque limits) showed the limit was an artifact of the probe: uniform sampling in 20 dimensions cannot find a workspace boundary, and the sampled stance family self-collided in exactly the volume the arm needed. The certified answer moved the required posture 20+ cm and deleted the constraint entirely. Tooling in `tools/wbik.py` and `tools/statics.py` (CPU, minutes, no GPU); both carry built-in known-answer controls that must pass before any real verdict is believed, after an inverse-dynamics variant produced a dramatic and entirely false verdict of its own.
+GPU training targets Isaac Lab 2.3 / PhysX 5, RSL-RL PPO, 2048–4096 parallel envs on one rented GPU — [`pod/setup_pod.sh`](pod/setup_pod.sh). Weights are not distributed.
 
-## Notes
+Earlier stages: [walking](media/01_walking.gif) · [walk-crouch-stand](media/02_walk_crouch_stand.gif) · [first pickups, 5%](media/04_first_floor_pickups_5pct.gif) · [pre-fix plateau, 7%](media/05_grasp_progress_7pct.gif) · [kneel-era](media/07_kneel_era_grasp.gif) · [descent + tipover](media/08_unified_descent_tipover.gif)
 
-- The robot asset ships from the vendor with self-collision off, gravity disabled on the links, and the base bolted in space — defaults that silently inflate results for anyone who trains on it unmodified. We turned all three on/off correctly: every number on this page runs with self-collision on, full gravity on every link, and a free base. Freeing the base required moving the articulation root to the pelvis and stripping the finger mimic-joints from the USD.
-- Every eval bins episodes by deepest stage reached (never-near → touched → gripped → lifted → held). Interventions target the binding constraint.
-- Difficulty curricula act on physics with a fixed anneal schedule, never on the reward. Evaluation always runs at full difficulty.
-- Rigid-body simulation flatters grip stability: the 11-second holds will not transfer at that duration. The Inspire hand's physical fingertip force sensors are the planned bridge.
+---
 
-## Latest footage (whole-body epoch)
-
-Both clips are the deterministic policy, no assists, honest captions —
-including the failures, because the failures are the finding.
-
-![Kneel-era grasp attempt: object secured at floor, lift incomplete](media/07_kneel_era_grasp.gif)
-
-Kneel-era lane: the policy reaches and secures the object at floor level;
-the lift does not complete. ([mp4](media/07_kneel_era_grasp.mp4))
-
-![Unified policy: skilled descent, then the hand tips the cylinder over](media/08_unified_descent_tipover.gif)
-
-Current unified whole-body lane: the descent is fast and precise — then the
-hand presses the cylinder over instead of wrapping it. The contact sensors
-register a "grasp" that is never load-bearing. Instrumented follow-up traced
-the lift failure to a measurable mechanism (knee-torque saturation in the
-learned deep posture vs. 2x headroom in the certified shallow-squat family,
-plus a contact-threshold artifact in the grasp predicate); the fixes are in
-the next training epoch. ([mp4](media/08_unified_descent_tipover.mp4))
-
-## Status
-
-Done: strict floor grasp, 35.5% free-standing (one object geometry, easy end of protocol range) — **now carrying an asterisk**: rendering revealed the policy holds in a deep forward lean, and the protocol's above-knee ground-contact clause was never enforced by any harness; the number stands only for the lift-and-hold criteria until re-evaluated with full clause enforcement. Commanded walking and kneeling (stand ↔ 0.32 m). The composed chain was measured end-to-end honestly for the first time: frozen-prior composition caps at the approach — a walking prior with no object in its observations steps on the target it cannot see (88–116 of 200 episodes ended with the object kicked over, while arrival placement, once achieved, was 12/12 inside the trained corridor). Current work trains a single whole-body policy instead; its first strict-criteria holds are on film. Judged episodes contain no scripted motion.
-
-Isaac Lab 2.3 / PhysX 5, RSL-RL PPO, 2048–4096 parallel environments, one rented GPU.
+*Every number came from an instrument in this repo. Every claim has footage, including the failures.*

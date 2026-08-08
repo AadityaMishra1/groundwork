@@ -195,11 +195,54 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
     # write git state to logs
     runner.add_git_repo_to_log(__file__)
+    # GRASP_ADVLOG=1 (9S-b C1 certificate): log the pre-normalization
+    # advantage outlier ratio each rollout. compute_returns() normalizes
+    # storage.advantages IN PLACE, but returns - values reconstructs the
+    # raw advantage exactly. A lump terminal bonus shows up here as
+    # max|A|/sigma >> 50 — the signal-monopoly fingerprint that killed 9S
+    # (global advantage normalization divides every sub-outlier signal,
+    # e.g. standing balance, to ~1e-3 sigma). No rsl_rl files are edited.
+    if os.environ.get("GRASP_ADVLOG", "0") == "1":
+        _st = runner.alg.storage
+        _orig_cr = _st.compute_returns
+        def _cr_logged(*a, **k):
+            out = _orig_cr(*a, **k)
+            _araw = (_st.returns - _st.values).flatten()
+            _sig = _araw.std().clamp_min(1e-8)
+            print(f"ADVLOG max|A|={float(_araw.abs().max()):.1f} "
+                  f"sigma={float(_sig):.2f} "
+                  f"ratio={float(_araw.abs().max() / _sig):.1f}", flush=True)
+            return out
+        _st.compute_returns = _cr_logged
     # load the checkpoint
     if agent_cfg.resume or agent_cfg.algorithm.class_name == "Distillation":
         print(f"[INFO]: Loading model checkpoint from: {resume_path}")
-        # load previously trained model
-        runner.load(resume_path)
+        # GRASP_LOAD_NO_OPT=1 (2026-07-30): optimizer-dropped warm starts.
+        # rsl_rl's load() reads optimizer_state_dict unconditionally when
+        # load_optimizer=True, so an init checkpoint with the optimizer
+        # stripped (std-reset surgery) KeyErrors without this. Default off
+        # = stock resume, bit-exact.
+        runner.load(resume_path,
+                    load_optimizer=os.environ.get("GRASP_LOAD_NO_OPT",
+                                                  "0") != "1")
+
+    # GRASP_EMPNORM_FREEZE=1 (2026-07-29): load the empirical obs
+    # normalizer's statistics from the checkpoint as usual but STOP their
+    # running update during training (normalization still applied).
+    # Measured rationale: every resume whose config change shifts the STATE
+    # distribution (FAR_FRAC 0->0.4; grace-length changes) drags the
+    # running normalizer within ~1 iteration and wrecks the deterministic
+    # mean for 1500-3000 iters of re-adaptation; reward-only changes (PBRS)
+    # do not move the stats and recover in ~600. Freezing a mature
+    # normalizer across the resume prevents the drift entirely. The gate
+    # lands HERE — after runner.load(), so the frozen stats are the
+    # checkpoint's — via g1_grasp.agents.apply_empnorm_freeze, which the
+    # certificate probe (probe_empnorm_freeze.py) calls too, so the certs
+    # exercise the shipped path. No rsl_rl files are edited (the ADVLOG
+    # pattern above); default off = this block never executes = bit-exact.
+    if os.environ.get("GRASP_EMPNORM_FREEZE", "0") == "1":
+        from g1_grasp.agents import apply_empnorm_freeze
+        apply_empnorm_freeze(runner)
 
     # dump the configuration into log-directory
     dump_yaml(os.path.join(log_dir, "params", "env.yaml"), env_cfg)
